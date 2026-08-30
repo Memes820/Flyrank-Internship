@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Refresh Candidates: A Content Opportunity Score for Search Visibility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FAF9F5;
+    --ink:#1C1D1F;
+    --ink-soft:#4A4C50;
+    --rule:#DAD7CE;
+    --signal:#2F5D8A;
+    --signal-soft:#EAF0F6;
+    --amber:#B9772E;
+    --amber-soft:#F6ECDD;
+    --mono-bg:#F1EFE8;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:17px;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px;}
+
+  /* ---- Masthead ---- */
+  header.masthead{
+    border-bottom:1px solid var(--rule);
+    padding:64px 0 40px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:var(--signal);
+    margin-bottom:18px;
+  }
+  h1.title{
+    font-family:'Source Serif 4',serif;
+    font-weight:700;
+    font-size:clamp(30px,4.4vw,44px);
+    line-height:1.14;
+    margin:0 0 18px;
+    letter-spacing:-0.01em;
+  }
+  .byline{
+    font-size:15px;
+    color:var(--ink-soft);
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .byline .dot{color:var(--rule);}
+
+  /* ---- Abstract ---- */
+  .abstract{
+    margin:36px 0 0;
+    padding:22px 26px;
+    background:var(--signal-soft);
+    border-left:3px solid var(--signal);
+    border-radius:2px;
+  }
+  .abstract .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--signal);
+    display:block;
+    margin-bottom:10px;
+  }
+  .abstract p{margin:0;font-size:15.5px;color:var(--ink);}
+
+  /* ---- Sections ---- */
+  section{
+    padding:52px 0;
+    border-bottom:1px solid var(--rule);
+  }
+  section:last-of-type{border-bottom:none;}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:22px;
+  }
+  .section-num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--amber);
+    background:var(--amber-soft);
+    padding:2px 8px;
+    border-radius:3px;
+  }
+  h2{
+    font-family:'Source Serif 4',serif;
+    font-size:26px;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.005em;
+  }
+  h3{
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--ink-soft);
+    margin:28px 0 12px;
+  }
+  p{margin:0 0 16px;}
+  ul,ol{margin:0 0 16px;padding-left:22px;}
+  li{margin-bottom:8px;}
+  strong{font-weight:600;}
+  code, .mono{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.88em;
+    background:var(--mono-bg);
+    padding:2px 6px;
+    border-radius:3px;
+  }
+  a{color:var(--signal);text-decoration-thickness:1px;text-underline-offset:2px;}
+
+  /* ---- Data cards ---- */
+  .datagrid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    margin:20px 0 8px;
+  }
+  .datacard{
+    border:1px solid var(--rule);
+    border-radius:6px;
+    padding:16px 14px;
+    text-align:center;
+    background:#fff;
+  }
+  .datacard .num{
+    font-family:'Source Serif 4',serif;
+    font-size:22px;
+    font-weight:700;
+    color:var(--signal);
+    display:block;
+  }
+  .datacard .lbl{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  @media(max-width:560px){.datagrid{grid-template-columns:1fr 1fr;}}
+
+  /* ---- Results table ---- */
+  table.results{
+    width:100%;
+    border-collapse:collapse;
+    margin:8px 0 20px;
+    font-size:15px;
+  }
+  table.results th, table.results td{
+    padding:11px 12px;
+    text-align:left;
+    border-bottom:1px solid var(--rule);
+  }
+  table.results th{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  table.results td.win{color:var(--signal);font-weight:600;}
+  table.results tr:last-child td{border-bottom:2px solid var(--ink);}
+
+  /* chart bars */
+  .barchart{margin:24px 0 8px;}
+  .barrow{margin-bottom:18px;}
+  .barrow .barlabel{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .bartrack{display:flex;flex-direction:column;gap:6px;}
+  .barline{display:flex;align-items:center;gap:10px;}
+  .barline .name{width:64px;font-size:12.5px;color:var(--ink-soft);flex-shrink:0;}
+  .barline .track{flex:1;background:var(--mono-bg);border-radius:3px;height:22px;position:relative;overflow:hidden;}
+  .barline .fill{height:100%;border-radius:3px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;}
+  .barline .fill.baseline{background:#C9C2AF;}
+  .barline .fill.model{background:var(--signal);}
+  .barline .fill span{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#fff;}
+
+  /* ---- Queue / signature element ---- */
+  .queue{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    overflow:hidden;
+    margin:20px 0 8px;
+    background:#fff;
+  }
+  .queue-head{
+    display:grid;
+    grid-template-columns:2.4fr 1fr 1.3fr 1fr;
+    gap:10px;
+    padding:10px 16px;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .queue-row{
+    display:grid;
+    grid-template-columns:2.4fr 1fr 1.3fr 1fr;
+    gap:10px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--rule);
+    font-size:13.5px;
+    align-items:center;
+  }
+  .queue-row:last-child{border-bottom:none;}
+  .queue-row .id{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-soft);}
+  .score-pill{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    background:var(--amber-soft);
+    color:var(--amber);
+    padding:2px 8px;
+    border-radius:10px;
+    display:inline-block;
+  }
+  .tag{
+    font-size:12px;
+    background:var(--signal-soft);
+    color:var(--signal);
+    padding:3px 8px;
+    border-radius:4px;
+    white-space:nowrap;
+  }
+  @media(max-width:600px){
+    .queue-head, .queue-row{grid-template-columns:1.6fr 1fr 1fr;}
+    .queue-head span:nth-child(3), .queue-row .why{display:none;}
+  }
+
+  /* ---- Callouts ---- */
+  .callout{
+    border:1px solid var(--rule);
+    border-left:3px solid var(--amber);
+    background:var(--amber-soft);
+    border-radius:2px;
+    padding:16px 20px;
+    margin:20px 0;
+    font-size:15px;
+  }
+  .callout .label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--amber);
+    display:block;
+    margin-bottom:8px;
+  }
+
+  /* ---- Footer ---- */
+  footer{
+    padding:48px 0 80px;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  footer a{color:var(--signal);}
+  .repro-links{list-style:none;padding:0;margin:16px 0;}
+  .repro-links li{
+    padding:10px 0;
+    border-bottom:1px solid var(--rule);
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .repro-links li:last-child{border-bottom:none;}
+  .credit{
+    margin-top:32px;
+    padding-top:24px;
+    border-top:1px solid var(--rule);
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <span class="eyebrow">Search Intelligence · Capstone Research Paper</span>
+    <h1 class="title">Ranking Refresh Candidates: A Content Opportunity Score for Search Visibility</h1>
+    <div class="byline">
+      <span>Umemah Naveed</span><span class="dot">·</span>
+      <span>FlyRank AI Internship, July 2026 cohort</span><span class="dot">·</span>
+      <span>Machine Learning Track</span>
+    </div>
+
+    <div class="abstract">
+      <span class="label">Abstract</span>
+      <p>Content teams can only review a handful of pages a week, so the question is which ones to look at first. This paper asks whether observable search signals — visibility, position, engagement — can rank pages for refresh review better than a simple hand-written rule. Using a 30,000-row anonymized slice of real FlyRank search data, I built a decision-tree classifier validated on a client-holdout split, and compared it against a transparent baseline built only from position and click-through rate. The model outperformed the baseline: Precision@20 of 0.80 versus 0.70, and Precision@50 of 0.68 versus 0.64. The result is a ranked, explainable review queue — not a guarantee that refreshing any single page will recover its traffic.</p>
+    </div>
+  </header>
+
+  <section id="intro">
+    <div class="section-head"><span class="section-num">01</span><h2>Introduction</h2></div>
+    <p>Every content team eventually runs into the same limit: dozens of pages might be worth a second look this month, but only a handful can actually get one. Somebody has to decide which pages come first, and right now that decision usually rests on gut feel or a hand-written rule of thumb.</p>
+    <p>This project asks a narrower, answerable version of that problem: <strong>given only signals that were knowable before any decision was made about a page, can we rank pages for refresh review better than a simple fixed rule?</strong> The decision this supports is a content reviewer's queue — not an automatic edit, not a guarantee of recovery, just a better-ordered list of where to look first.</p>
+  </section>
+
+  <section id="data">
+    <div class="section-head"><span class="section-num">02</span><h2>Data</h2></div>
+    <p>This work uses the starter release that ships with the FlyRank ML Internship: a 30,000-row anonymized slice of real search performance data (<code>content_refresh_anonymized.csv</code>), one row per content page. Rows were kept only when a page had real visibility and enough history to judge:</p>
+    <div class="datagrid">
+      <div class="datacard"><span class="num">90d+</span><span class="lbl">minimum content age</span></div>
+      <div class="datacard"><span class="num">&gt;0</span><span class="lbl">minimum 90-day impressions</span></div>
+      <div class="datacard"><span class="num">6</span><span class="lbl">features used</span></div>
+    </div>
+    <p>Pages younger than 90 days were excluded because there isn't yet enough history to call a trend a decline. Pages with zero impressions were excluded because the ranking signals (CTR, average position) are undefined without any visibility — those pages are a discoverability problem, not a refresh problem.</p>
+    <p><strong>Public-safe by design:</strong> every identifier in this dataset is pseudonymized. No client names, domains, raw URLs, or query text appear anywhere in this paper or the underlying repository.</p>
+  </section>
+
+  <section id="method">
+    <div class="section-head"><span class="section-num">03</span><h2>Methodology</h2></div>
+
+    <h3>Label</h3>
+    <p>The target is <code>trend_direction == "down"</code> — a proxy, not a true future outcome, since it's computed from the same window as the features. This is a known limitation, addressed openly in Section 5.</p>
+
+    <h3>Features</h3>
+    <p>Six signals, each knowable at the moment a reviewer would look at the page: <code>impressions_90d</code>, <code>content_age_days</code>, <code>avg_position</code>, <code>ctr</code>, <code>sessions_90d</code>, <code>word_count</code>.</p>
+
+    <h3>Baseline</h3>
+    <p>An early version of the baseline scored a suspicious <strong>1.000</strong> precision — a signal that something was wrong, not that the rule was excellent. It had been built using the decline label itself as an input, which meant it wasn't predicting anything; it was reading the answer key. That version was discarded. The honest baseline used in this paper is built only from <code>avg_position</code> and <code>ctr</code>, with no reference to the label it's trying to rank against.</p>
+
+    <h3>Model &amp; validation</h3>
+    <p>A depth-4 decision tree classifier, trained with class weighting for the label imbalance. Validation uses a <strong>client-holdout split</strong> — entire clients are held out of training and only appear in the test set — so the model is scored on clients it has genuinely never seen, not just unseen pages from familiar clients.</p>
+  </section>
+
+  <section id="results">
+    <div class="section-head"><span class="section-num">04</span><h2>Results</h2></div>
+    <p>Both the baseline and the model were scored on the identical held-out test set, using Precision@K — of the top K pages a reviewer would check, how many were genuinely declining.</p>
+
+    <table class="results">
+      <tr><th>Metric</th><th>Baseline</th><th>Model</th></tr>
+      <tr><td>Precision@20</td><td>0.700</td><td class="win">0.800</td></tr>
+      <tr><td>Precision@50</td><td>0.640</td><td class="win">0.680</td></tr>
+    </table>
+
+    <div class="barchart">
+      <div class="barrow">
+        <div class="barlabel">Precision@20</div>
+        <div class="bartrack">
+          <div class="barline"><span class="name">Baseline</span><div class="track"><div class="fill baseline" style="width:70%"><span>0.700</span></div></div></div>
+          <div class="barline"><span class="name">Model</span><div class="track"><div class="fill model" style="width:80%"><span>0.800</span></div></div></div>
+        </div>
+      </div>
+      <div class="barrow">
+        <div class="barlabel">Precision@50</div>
+        <div class="bartrack">
+          <div class="barline"><span class="name">Baseline</span><div class="track"><div class="fill baseline" style="width:64%"><span>0.640</span></div></div></div>
+          <div class="barline"><span class="name">Model</span><div class="track"><div class="fill model" style="width:68%"><span>0.680</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <p>The model beats the honest baseline at both cutoffs. The gap is modest rather than dramatic — a realistic result for six simple features on a 30,000-row slice, and a more trustworthy one than the discarded 1.000 baseline would have suggested.</p>
+  </section>
+
+  <section id="limitations">
+    <div class="section-head"><span class="section-num">05</span><h2>Limitations &amp; Honest Framing</h2></div>
+    <div class="callout">
+      <span class="label">What this paper does not claim</span>
+      <p>This is decision-support, not proof. The results are <strong>observed and directional</strong> — they describe association within this data slice, not causation. Refreshing a flagged page is not guaranteed to recover its traffic; testing that would require a controlled experiment this data cannot provide.</p>
+    </div>
+    <ul>
+      <li>The label is a same-window proxy for decline, not a verified future outcome.</li>
+      <li>This uses a 30,000-row anonymized starter slice, not the full ~79M-row warehouse — findings may not generalize to all clients or time periods.</li>
+      <li>No causal or algorithmic claims are made about how Google ranks pages.</li>
+    </ul>
+  </section>
+
+  <section id="recs">
+    <div class="section-head"><span class="section-num">06</span><h2>Ranked Recommendations</h2></div>
+    <p>The model's top-ranked review candidates, each carrying a reason a human reviewer can actually check:</p>
+
+    <div class="queue">
+      <div class="queue-head"><span>Content ID</span><span>Score</span><span class="why">Why flagged</span><span>Action</span></div>
+      <div class="queue-row"><span class="id">content_8a8b…</span><span class="score-pill">0.87</span><span class="why">declining, high demand</span><span class="tag">Review for refresh</span></div>
+      <div class="queue-row"><span class="id">content_6989…</span><span class="score-pill">0.85</span><span class="why">declining, high demand</span><span class="tag">Review for refresh</span></div>
+      <div class="queue-row"><span class="id">content_5797…</span><span class="score-pill">0.84</span><span class="why">declining, strong position</span><span class="tag">Review for refresh</span></div>
+      <div class="queue-row"><span class="id">content_78c5…</span><span class="score-pill">0.81</span><span class="why">declining, weak CTR</span><span class="tag">Review for refresh</span></div>
+      <div class="queue-row"><span class="id">content_fca1…</span><span class="score-pill">0.79</span><span class="why">declining, high demand</span><span class="tag">Review for refresh</span></div>
+    </div>
+
+    <p>Every flagged page would be wrong to act on if the drop turns out to be seasonal, or if a sibling page on the same site simply absorbed the traffic (consolidation) rather than the page genuinely losing relevance — both are worth a quick check before committing review time.</p>
+  </section>
+
+  <footer>
+    <div class="section-head" style="border:none;padding:0 0 4px;"><span class="section-num">07</span><h2 style="font-size:20px;">Reproducibility</h2></div>
+    <p>Every notebook behind this paper — from the first correlation check to the final model — lives in the public repository below.</p>
+    <ul class="repro-links">
+      <li><span>Full repository</span><a href="https://github.com/Memes820/Flyrank-Internship" target="_blank">github.com/Memes820/Flyrank-Internship</a></li>
+      <li><span>Capstone notebook</span><a href="https://github.com/Memes820/Flyrank-Internship/blob/main/work/notebooks/capstone.ipynb" target="_blank">work/notebooks/capstone.ipynb</a></li>
+    </ul>
+
+    <div class="credit">
+      <p><strong>Acknowledgments &amp; data credit</strong> — Built on the FlyRank ML Internship dataset. Learn more at <a href="https://flyrank.ai" target="_blank">flyrank.ai</a>.</p>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
